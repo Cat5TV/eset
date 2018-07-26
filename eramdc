@@ -45,7 +45,7 @@ if [[ "$command" == "prep" ]]; then
 
   # Get the latest version of the MDC installer
   wget -O /root/eset_installers/MDMCore-Linux-x86_64-$version.sh https://download.eset.com/com/eset/apps/business/era/mdm/v6/$version/mdmcore-linux-x86_64.sh
-  rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
+  chmod +x /root/eset_installers/MDMCore-Linux-x86_64-$version.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
 
   # Add driver names "MySQL"
   if ! grep -q "\[MySQL\]" /etc/odbcinst.ini; then
@@ -87,6 +87,26 @@ elif [[ "$command" == "install" ]]; then
     echo ""
   fi
 
-  
+# Generate a new cert
+#  openssl req -out /tmp/cert.csr -new -newkey rsa:2048 -nodes -keyout /tmp/cert.key
+#  openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/cert.key -out /tmp/cert.crt
+#  openssl pkcs12 -export -out /tmp/cert.pfx -inkey /tmp/cert.key -in /tmp/cert.crt -certfile /tmp/cert.crt  
+#  cert=/tmp/cert.pfx
+
+# Use the cert that was created during setup
+  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
+password=testtest123
+  /root/eset_installers/MDM.sh \
+  --https-cert-path="$cert" \
+  --port=2222 \
+  --db-type="MySQL" \
+  --db-driver="MySQL" \
+  --db-admin-username="root" \
+  --db-admin-password=$password \
+  --db-user-password=$password \
+  --db-hostname=127.0.0.1 \
+  --webconsole-password=$password \
+  --hostname=era.local \
+  --mdm-hostname=ESET
 
 fi
