@@ -64,7 +64,7 @@ if [[ "$command" == "prep" ]]; then
 
 # Use the cert that was created during setup
 #  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
-password=testtest123
+  password=eraadmin
   /root/eset_installers/MDM.sh \
   --https-cert-path="$cert" \
   --port=2222 \
