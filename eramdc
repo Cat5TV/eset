@@ -42,6 +42,7 @@ me=$(/usr/bin/basename $0)
 command=$1
 
 if [[ "$command" == "prep" ]]; then
+
   # Get the latest version of the MDC installer
   wget -O /root/eset_installers/MDMCore-Linux-x86_64-$version.sh https://download.eset.com/com/eset/apps/business/era/mdm/v6/$version/mdmcore-linux-x86_64.sh
   rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
@@ -70,17 +71,22 @@ if [[ "$command" == "prep" ]]; then
 
   Save and allow the virtual server to reboot.
 
-  After reboot, run ./$me install
+  After reboot, run: $0 install
 
   ---
 
   "
   touch /var/log/eramdc.log
   exit
-else if [[ "$command" == "install" ]]; then
+
+elif [[ "$command" == "install" ]]; then
+
   if [[ ! -f /var/log/eramdc.log ]]; then
     echo "You have not prepared the system yet."
-    echo "Usage: ./$me prep"
+    echo "Usage: $0 prep"
     echo ""
   fi
+
+  
+
 fi
