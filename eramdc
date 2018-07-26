@@ -56,6 +56,35 @@ if [[ "$command" == "prep" ]]; then
   " >> /etc/odbcinst.ini
   fi
 
+# Generate a new cert
+  openssl req -out /tmp/cert.csr -new -newkey rsa:2048 -nodes -keyout /tmp/cert.key
+  openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/cert.key -out /tmp/cert.crt
+  openssl pkcs12 -export -out /tmp/cert.pfx -inkey /tmp/cert.key -in /tmp/cert.crt -certfile /tmp/cert.crt  
+  cert=/tmp/cert.pfx
+
+# Use the cert that was created during setup
+#  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
+password=testtest123
+  /root/eset_installers/MDM.sh \
+  --https-cert-path="$cert" \
+  --port=2222 \
+  --db-type="MySQL" \
+  --db-driver="MySQL" \
+  --db-admin-username="root" \
+  --db-admin-password=$password \
+  --db-user-password=$password \
+  --db-hostname=127.0.0.1 \
+  --webconsole-password=$password \
+  --hostname=era.local \
+  --mdm-hostname=ESET
+
+# Open up the firewall rules
+  iptables -A INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+  iptables -A INPUT -m state --state NEW -p tcp --dport 9980 -j ACCEPT
+  service iptables save
+  service iptables restart
+
+
   echo ""
   echo "---
 
@@ -71,7 +100,7 @@ if [[ "$command" == "prep" ]]; then
 
   Save and allow the virtual server to reboot.
 
-  After reboot, run: $0 install
+  After reboot, you should be all set.
 
   ---
 
@@ -87,26 +116,10 @@ elif [[ "$command" == "install" ]]; then
     echo ""
   fi
 
-# Generate a new cert
-#  openssl req -out /tmp/cert.csr -new -newkey rsa:2048 -nodes -keyout /tmp/cert.key
-#  openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/cert.key -out /tmp/cert.crt
-#  openssl pkcs12 -export -out /tmp/cert.pfx -inkey /tmp/cert.key -in /tmp/cert.crt -certfile /tmp/cert.crt  
-#  cert=/tmp/cert.pfx
 
-# Use the cert that was created during setup
-  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
-password=testtest123
-  /root/eset_installers/MDM.sh \
-  --https-cert-path="$cert" \
-  --port=2222 \
-  --db-type="MySQL" \
-  --db-driver="MySQL" \
-  --db-admin-username="root" \
-  --db-admin-password=$password \
-  --db-user-password=$password \
-  --db-hostname=127.0.0.1 \
-  --webconsole-password=$password \
-  --hostname=era.local \
-  --mdm-hostname=ESET
+echo ""
+echo "You should be all set. To test, visit https://$ip:9980"
+echo ""
+
 
 fi
