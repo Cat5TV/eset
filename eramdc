@@ -1,0 +1,86 @@
+#!/bin/bash
+
+########
+#
+# ESET Remote Administrator Mobile Device Connector Script for ERA Virtual Appliances (v6)
+#
+# Deploy Mobile Device Connector on an ESET Remote Administrator virtual appliance
+# Typically when deploying the OVA, you'd choose one option or the other. This script lets you have both on one VM.
+#
+# This can be deployed without any purchase necessary, however an active ESET business license must be added in order to deploy clients
+#
+# Download the appliance:
+#
+# OVA (VMware vSphere, VMware Player, VMware Workstation, Oracle VirtualBox, ESXi 5.0+)
+#  https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.ova
+#
+# VHD (Microsoft Hyper-V)
+#  https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.vhd.zip
+#
+# SSH to server:
+#  IP address will be displayed in the VM console.
+#  Username: root
+#  Password: eraadmin (this will change when you set one during activation)
+#
+# Prepare for Installation:
+#  ./eramdc prep
+#
+# Install MDC on ERA VM
+#  ./eramdc install
+#
+########
+
+#### Begin Configuration
+
+  version="6.5.510.0" # from MDM's URL as found in the download section
+  nic="eth0"
+
+#### End Configuration
+
+ip=$(/sbin/ip -f inet addr show $nic | grep -Po 'inet \K[\d.]+')
+me=$(/usr/bin/basename $0)
+command=$1
+
+if [[ "$command" == "prep" ]]; then
+  # Get the latest version of the MDC installer
+  wget -O /root/eset_installers/MDMCore-Linux-x86_64-$version.sh https://download.eset.com/com/eset/apps/business/era/mdm/v6/$version/mdmcore-linux-x86_64.sh
+  rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
+
+  # Add driver names "MySQL"
+  if ! grep -q "\[MySQL\]" /etc/odbcinst.ini; then
+    odbc=$(find /usr/lib64/libmyodbc*w.so)
+    echo "[MySQL]
+  Driver=$odbc
+  UsageCount=1
+  " >> /etc/odbcinst.ini
+  fi
+
+  echo ""
+  echo "---
+
+  Load $ip in browser and set up ESET Remote Administrator Server Appliance.
+
+  Set Hostname to era.local
+
+  Enter a password. Remember this will be your new SSH password after the reboot.
+
+  Setup Windows domain credentials, or leave blank if not applicable.
+
+  Check off the HTTP Proxy option for locally-mirrored updates.
+
+  Save and allow the virtual server to reboot.
+
+  After reboot, run ./$me install
+
+  ---
+
+  "
+  touch /var/log/eramdc.log
+  exit
+else if [[ "$command" == "install" ]]; then
+  if [[ ! -f /var/log/eramdc.log ]]; then
+    echo "You have not prepared the system yet."
+    echo "Usage: ./$me prep"
+    echo ""
+  fi
+fi
