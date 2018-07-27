@@ -53,17 +53,17 @@ if [[ "$command" == "prep" ]]; then
   if ! grep -q "\[MySQL\]" /etc/odbcinst.ini; then
     odbc=$(find /usr/lib64/libmyodbc*w.so)
     echo "[MySQL]
-  Driver=$odbc
-  UsageCount=1
-  " >> /etc/odbcinst.ini
+Driver=$odbc
+UsageCount=1
+" >> /etc/odbcinst.ini
   fi
 
   echo ""
   echo "---
 
-  Load $ip in browser and set up ESET Remote Administrator Server Appliance.
+  Load https://$ip in browser and set up ESET Remote Administrator Server Appliance.
 
-  Set Hostname to era.local
+  Set Hostname to $(hostname)
 
   Enter a password. Remember this will be your new SSH password after the reboot.
 
@@ -73,7 +73,9 @@ if [[ "$command" == "prep" ]]; then
 
   Save and allow the virtual server to reboot.
 
-  After reboot, run $0 install
+  After reboot, wait for the "Configuring" message to disappear and then SSH in.
+
+  To complete the installation, run: $0 install
 
   ---
 
@@ -153,8 +155,12 @@ read -s -p "Enter your password again: " password
   --mdm-hostname=$ip
 
 echo ""
-echo "You should be all set. To test, visit https://$ip:9980"
+echo "As soon as the server returns from a reboot, you should be all set."
+echo "To test, visit https://$ip:9980"
 echo ""
 
+reboot
 
+else
+  echo "Usage: ./$me [prep|install]"
 fi
