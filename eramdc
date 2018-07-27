@@ -3,6 +3,7 @@
 ########
 #
 # ESET Remote Administrator Mobile Device Connector Script for ERA Virtual Appliances (v6)
+# By Robbie Ferguson
 #
 # Deploy Mobile Device Connector on an ESET Remote Administrator virtual appliance
 # Typically when deploying the OVA, you'd choose one option or the other. This script lets you have both on one VM.
@@ -49,7 +50,7 @@ if [[ "$command" == "prep" ]]; then
   wget -O /root/eset_installers/MDMCore-Linux-x86_64-$version.sh https://download.eset.com/com/eset/apps/business/era/mdm/v6/$version/mdmcore-linux-x86_64.sh
   chmod +x /root/eset_installers/MDMCore-Linux-x86_64-$version.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
 
-  # Add driver names "MySQL"
+  # Add driver named "MySQL"
   if ! grep -q "\[MySQL\]" /etc/odbcinst.ini; then
     odbc=$(find /usr/lib64/libmyodbc*w.so)
     echo "[MySQL]
