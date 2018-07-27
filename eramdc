@@ -57,6 +57,7 @@ if [[ "$command" == "prep" ]]; then
 Driver=$odbc
 UsageCount=1
 " >> /etc/odbcinst.ini
+/usr/bin/odbcinst -i -d -f /etc/odbcinst.ini 
   fi
 
   echo ""
@@ -144,6 +145,7 @@ read -s -p "Enter your password again: " password
 #  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
 cert=/root/eset_installers/thirdparty/eset/test.pfx
   /root/eset_installers/MDM.sh \
+  --skip-license \
   --https-cert-path="$cert" \
   --port=2222 \
   --db-type="MySQL" \
