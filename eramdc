@@ -141,7 +141,8 @@ read -s -p "Enter your password again: " password
 #  cert=/tmp/cert.pfx
 
 # Use the cert that was created during setup
-  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
+#  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
+cert=/root/eset_installers/thirdparty/eset/test.pfx
   /root/eset_installers/MDM.sh \
   --https-cert-path="$cert" \
   --port=2222 \
@@ -159,7 +160,7 @@ echo ""
 echo "As soon as the server returns from a reboot, you should be all set."
 echo "To test, visit https://$ip:9980"
 echo ""
-
+exit
 reboot
 
 else
