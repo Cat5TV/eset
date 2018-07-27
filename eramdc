@@ -11,11 +11,11 @@
 #
 # Download the appliance:
 #
-# OVA (VMware vSphere, VMware Player, VMware Workstation, Oracle VirtualBox, ESXi 5.0+)
-#  https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.ova
+#  - OVA (VMware vSphere, VMware Player, VMware Workstation, Oracle VirtualBox, ESXi 5.0+)
+#    https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.ova
 #
-# VHD (Microsoft Hyper-V)
-#  https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.vhd.zip
+#  - VHD (Microsoft Hyper-V)
+#    https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.vhd.zip
 #
 # SSH to server:
 #  IP address will be displayed in the VM console.
@@ -25,7 +25,9 @@
 # Prepare for Installation:
 #  ./eramdc prep
 #
-# Install MDC on ERA VM
+# Follow the on-screen instructions during prep to configure the ESET Remote Administrator appliance in your browser.
+#
+# Install MDC on ERA VM (you will need to re-enter the password you created above)
 #  ./eramdc install
 #
 ########
@@ -56,35 +58,6 @@ if [[ "$command" == "prep" ]]; then
   " >> /etc/odbcinst.ini
   fi
 
-# Generate a new cert
-  openssl req -out /tmp/cert.csr -new -newkey rsa:2048 -nodes -keyout /tmp/cert.key
-  openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/cert.key -out /tmp/cert.crt
-  openssl pkcs12 -export -out /tmp/cert.pfx -inkey /tmp/cert.key -in /tmp/cert.crt -certfile /tmp/cert.crt  
-  cert=/tmp/cert.pfx
-
-# Use the cert that was created during setup
-#  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
-  password=eraadmin
-  /root/eset_installers/MDM.sh \
-  --https-cert-path="$cert" \
-  --port=2222 \
-  --db-type="MySQL" \
-  --db-driver="MySQL" \
-  --db-admin-username="root" \
-  --db-admin-password=$password \
-  --db-user-password=$password \
-  --db-hostname=127.0.0.1 \
-  --webconsole-password=$password \
-  --hostname=era.local \
-  --mdm-hostname=ESET
-
-# Open up the firewall rules
-  iptables -A INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
-  iptables -A INPUT -m state --state NEW -p tcp --dport 9980 -j ACCEPT
-  service iptables save
-  service iptables restart
-
-
   echo ""
   echo "---
 
@@ -100,7 +73,7 @@ if [[ "$command" == "prep" ]]; then
 
   Save and allow the virtual server to reboot.
 
-  After reboot, you should be all set.
+  After reboot, run $0 install
 
   ---
 
@@ -116,6 +89,68 @@ elif [[ "$command" == "install" ]]; then
     echo ""
   fi
 
+read -s -p "Enter your password again: " password
+
+# Create Firewall Rules
+
+  # Web interface
+    iptables -A INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+    iptables -A INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+
+  # MDC
+    # Mobile Device Enrollment
+    iptables -A INPUT -m state --state NEW -p tcp --dport 9980 -j ACCEPT
+    # Mobile Device Communication
+    iptables -A INPUT -m state --state NEW -p tcp --dport 9981 -j ACCEPT
+    # Notifications via Apple Push services
+    iptables -A INPUT -m state --state NEW -p tcp --dport 2195 -j ACCEPT
+    # Apple Feedback service
+    iptables -A INPUT -m state --state NEW -p tcp --dport 2196 -j ACCEPT
+
+  # Mirror Server
+    iptables -A INPUT -m state --state NEW -p tcp --dport 2221 -j ACCEPT
+
+  # Client/Server Connections
+    iptables -A INPUT -m state --state NEW -p tcp --dport 2222 -j ACCEPT
+    iptables -A INPUT -m state --state NEW -p tcp --dport 2223 -j ACCEPT
+
+  # Wake-up Call
+    iptables -A INPUT -m state --state NEW -p tcp --dport 1237 -j ACCEPT
+    iptables -A INPUT -m state --state NEW -p tcp --dport 1238 -j ACCEPT
+
+  # Apache HTTP Proxy
+    iptables -A INPUT -m state --state NEW -p tcp --dport 3128 -j ACCEPT
+
+  # LDAP Synchronization
+    iptables -A INPUT -m state --state NEW -p tcp --dport 389 -j ACCEPT
+
+  # Save and reload firewall rules
+    service iptables save
+    service iptables restart
+
+# End Firewall Rules
+
+
+# Generate a new cert
+#  openssl req -out /tmp/cert.csr -new -newkey rsa:2048 -nodes -keyout /tmp/cert.key
+#  openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/cert.key -out /tmp/cert.crt
+#  openssl pkcs12 -export -out /tmp/cert.pfx -inkey /tmp/cert.key -in /tmp/cert.crt -certfile /tmp/cert.crt  
+#  cert=/tmp/cert.pfx
+
+# Use the cert that was created during setup
+  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
+  /root/eset_installers/MDM.sh \
+  --https-cert-path="$cert" \
+  --port=2222 \
+  --db-type="MySQL" \
+  --db-driver="MySQL" \
+  --db-admin-username="root" \
+  --db-admin-password=$password \
+  --db-user-password=$password \
+  --db-hostname=127.0.0.1 \
+  --webconsole-password=$password \
+  --hostname=$(hostname) \
+  --mdm-hostname=$ip
 
 echo ""
 echo "You should be all set. To test, visit https://$ip:9980"
