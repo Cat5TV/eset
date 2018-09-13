@@ -2,10 +2,10 @@
 
 ########
 #
-# ESET Remote Administrator Mobile Device Connector Script for ERA Virtual Appliances (v6)
+# ESET Remote Administrator Mobile Device Connector Script for ESMC Virtual Appliances (v7)
 # By Robbie Ferguson
 #
-# Deploy Mobile Device Connector on an ESET Remote Administrator virtual appliance
+# Deploy Mobile Device Connector on an ESET Security Management Center virtual appliance
 # Typically when deploying the OVA, you'd choose one option or the other. This script lets you have both on one VM.
 #
 # This can be deployed without any purchase necessary, however an active ESET business license must be added in order to deploy clients
@@ -13,29 +13,28 @@
 # Download the appliance:
 #
 #  - OVA (VMware vSphere, VMware Player, VMware Workstation, Oracle VirtualBox, ESXi 5.0+)
-#    https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.ova
+#    https://download.eset.com/com/eset/apps/business/era/appliance/latest/esmc_appliance.ova
 #
 #  - VHD (Microsoft Hyper-V)
-#    https://download.eset.com/com/eset/apps/business/era/appliance/latest/era_appliance.vhd.zip
+#    https://download.eset.com/com/eset/apps/business/era/appliance/latest/esmc_appliance.vhd.zip
 #
 # SSH to server:
 #  IP address will be displayed in the VM console.
 #  Username: root
-#  Password: eraadmin (this will change when you set one during activation)
+#  Password: whatever you set it to during activation
 #
 # Prepare for Installation:
-#  ./eramdc prep
+#  ./esmcmdc prep
 #
-# Follow the on-screen instructions during prep to configure the ESET Remote Administrator appliance in your browser.
+# Follow the on-screen instructions during prep to configure the ESET Security Management Center appliance in your browser.
 #
-# Install MDC on ERA VM (you will need to re-enter the password you created above)
-#  ./eramdc install
+# Install MDC on ESMC VM (you will need to re-enter the password you created above)
+#  ./esmcmdc install
 #
 ########
 
 #### Begin Configuration
 
-  version="6.5.510.0" # from MDM's URL as found in the download section
   nic="eth0"
 
 #### End Configuration
@@ -47,8 +46,8 @@ command=$1
 if [[ "$command" == "prep" ]]; then
 
   # Get the latest version of the MDC installer
-  wget -O /root/eset_installers/MDMCore-Linux-x86_64-$version.sh https://download.eset.com/com/eset/apps/business/era/mdm/v6/$version/mdmcore-linux-x86_64.sh
-  chmod +x /root/eset_installers/MDMCore-Linux-x86_64-$version.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
+  wget -O /root/eset_installers/mdmcore-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/mdm/latest/mdmcore-linux-x86_64.sh
+  chmod +x /root/eset_installers/mdmcore-linux-x86_64.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/mdmcore-linux-x86_64.sh /root/eset_installers/MDM.sh
 
   # Add PHP for use by tools shell script
   if [[ ! -e /usr/bin/php ]]; then
@@ -68,7 +67,7 @@ UsageCount=1
   echo ""
   echo "---
 
-  Load https://$ip in browser and set up ESET Remote Administrator Server Appliance.
+  Load https://$ip in browser and set up ESET Security Management Center Appliance.
 
   Set Hostname to $(hostname)
 
@@ -87,12 +86,12 @@ UsageCount=1
   ---
 
   "
-  touch /var/log/eramdc.log
+  touch /var/log/esmcmdc.log
   exit
 
 elif [[ "$command" == "install" ]]; then
 
-  if [[ ! -f /var/log/eramdc.log ]]; then
+  if [[ ! -f /var/log/esmcmdc.log ]]; then
     echo "You have not prepared the system yet."
     echo "Usage: $0 prep"
     echo ""
