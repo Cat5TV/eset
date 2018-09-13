@@ -1,0 +1,17 @@
+#!/usr/bin/php
+<?php
+  $installlog = '/root/appliance-configuration-log.txt';
+  if (file_exists($installlog)) {
+    $log = file($installlog);
+    if (is_array($log)) {
+      foreach ($log as $line) {
+        if (stristr($line,'version:')) {
+          echo $line;
+        }
+      }
+    }
+  } else {
+    echo 'You must activate your ESET server first.' . PHP_EOL;
+    die;
+  }
+?>

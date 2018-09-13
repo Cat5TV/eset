@@ -35,7 +35,7 @@
 
 #### Begin Configuration
 
-  version="6.5.510.0" # from MDM's URL as found in the download section
+#  version="6.5.510.0" # from MDM's URL as found in the download section
   nic="eth0"
 
 #### End Configuration
@@ -47,8 +47,15 @@ command=$1
 if [[ "$command" == "prep" ]]; then
 
   # Get the latest version of the MDC installer
-  wget -O /root/eset_installers/MDMCore-Linux-x86_64-$version.sh https://download.eset.com/com/eset/apps/business/era/mdm/v6/$version/mdmcore-linux-x86_64.sh
-  chmod +x /root/eset_installers/MDMCore-Linux-x86_64-$version.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
+#  wget -O /root/eset_installers/MDMCore-Linux-x86_64-$version.sh https://download.eset.com/com/eset/apps/business/era/mdm/v6/$version/mdmcore-linux-x86_64.sh
+#  chmod +x /root/eset_installers/MDMCore-Linux-x86_64-$version.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/MDMCore-Linux-x86_64-$version.sh /root/eset_installers/MDM.sh
+  wget -O /root/eset_installers/mdmcore-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/mdm/latest/mdmcore-linux-x86_64.sh
+  chmod +x /root/eset_installers/mdmcore-linux-x86_64.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/mdmcore-linux-x86_64.sh /root/eset_installers/MDM.sh
+
+  # Add PHP for use by tools shell script
+  if [[ ! -e /usr/bin/php ]]; then
+    yum -y install php-cli
+  fi
 
   # Add driver named "MySQL"
   if ! grep -q "\[MySQL\]" /etc/odbcinst.ini; then
@@ -142,8 +149,7 @@ read -s -p "Enter your password again: " password
 #  cert=/tmp/cert.pfx
 
 # Use the cert that was created during setup
-#  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
-cert=/root/eset_installers/thirdparty/eset/test.pfx
+  cert=/opt/eset/RemoteAdministrator/Server/server-certificate.pfx
   /root/eset_installers/MDM.sh \
   --skip-license \
   --https-cert-path="$cert" \
