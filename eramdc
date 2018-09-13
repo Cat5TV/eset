@@ -98,6 +98,7 @@ elif [[ "$command" == "install" ]]; then
     echo "You have not prepared the system yet."
     echo "Usage: $0 prep"
     echo ""
+    exit
   fi
 
 read -s -p "Enter your password again: " password
