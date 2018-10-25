@@ -16,6 +16,7 @@ echo "Trying version 7 and up..."
 wmic product where name="ESET Management Agent" call uninstall /nointeractive
 
 REM This part is based upon a script provided by ESET Support, uploaded by Jarred Jordan
+REM Apparently ERA Agent 6.5.522.0 would leave some registry keys behind, so this should clear that up for affected systems
 echo "Don't worry if you get errors about missing registry keys."
 echo "Just removing some that may be left behind. If they don't exist, no worries."
 reg delete "HKEY_CLASSES_ROOT\Installer\Products\07F21F149AF55F34494F355BE44BEE4C" /f
