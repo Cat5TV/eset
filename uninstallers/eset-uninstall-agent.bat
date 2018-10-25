@@ -8,9 +8,9 @@ REM Version 1
 
 echo "Uninstalling ESET Management Agent..."
 REM Version 6 and under
-wmic product where name="ESET Remote Administrator Agent" call uninstall
+wmic product where name="ESET Remote Administrator Agent" call uninstall /unattended
 REM Version 7 and up
-wmic product where name="ESET Management Agent" call uninstall
+wmic product where name="ESET Management Agent" call uninstall /unattended
 
 REM This part is based upon a script provided by ESET Support, uploaded by Jarred Jordan
 echo "Don't worry if you get errors about missing registry keys."
