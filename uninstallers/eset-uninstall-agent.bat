@@ -1,9 +1,10 @@
 @echo off
-REM Version 1
+REM By Robbie Ferguson // baldnerd.com
 REM Removes ESET Management Agent (previously named ESET Remote Administrator Agent) from Windows machines
 REM Intended for use as GPO, but could have other applications
-REM By Robbie Ferguson // baldnerd.com
-REM This program has to be run as administrator
+REM PLEASE BE MINDFUL - This will remove your connection to your ESMC/ERA server. Depending on your policies, this could be a very bad thing.
+REM This program must be run as administrator
+REM Version 1
 
 echo "Uninstalling ESET Management Agent..."
 REM Version 6 and under
