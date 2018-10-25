@@ -18,3 +18,7 @@ Following installation, you must:
 
 1. Create a ESET Mobile Device Connector certificate. Use your appliance's LAN IP address as the hostname.
 2. Create a ESET Mobile Device policy. Add the certificate, and assign it to your ERA/ESMC appliance.
+
+## Uninstall ESET Management Agent / ESET Remote Administrator Agent
+
+Should you need to uninstall your ESET agent without a Client Task (as would be the case if your ERA/ESMC server was no longer available), you can use [uninstallers/eset-uninstall-agent.bat](uninstallers/eset-uninstall-agent.bat) as a GPO, or manually run as administrator.
