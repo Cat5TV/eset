@@ -6,6 +6,9 @@ REM PLEASE BE MINDFUL - This will remove your connection to your ESMC/ERA server
 REM This program must be run as administrator
 REM Version 1.01
 
+REM Tested successfully with:
+REM - ESET Management Agent 7.0.553.0 EEE9596D-3139-4B63-B08B-3F17F0E345F0
+
 echo "Uninstalling ESET Management Agent..."
 echo "Trying version 6 and under..."
 wmic product where name="ESET Remote Administrator Agent" call uninstall /nointeractive
