@@ -11,8 +11,7 @@ wmic product where name="ESET Remote Administrator Agent" call uninstall
 REM Version 7 and up
 wmic product where name="ESET Management Agent" call uninstall
 
-REM This part adapted (fixed) based on a script provided by ESET Support, uploaded by Jarred Jordan
-REM Their original script included /v directive but no key names, so would cause a syntax error
+REM This part is based upon a script provided by ESET Support, uploaded by Jarred Jordan
 echo "Don't worry if you get errors about missing registry keys."
 echo "Just removing some that may be left behind. If they don't exist, no worries."
 reg delete "HKEY_CLASSES_ROOT\Installer\Products\07F21F149AF55F34494F355BE44BEE4C" /f
