@@ -1,4 +1,5 @@
 @echo off
+REM Version 1
 REM Removes ESET Remote Administrator Agent
 REM Intended for use as GPO, but could have other applications
 REM By Robbie Ferguson // baldnerd.com
