@@ -1,6 +1,6 @@
 @echo off
 REM Version 1
-REM Removes ESET Remote Administrator Agent
+REM Removes ESET Management Agent (previously named ESET Remote Administrator Agent) from Windows machines
 REM Intended for use as GPO, but could have other applications
 REM By Robbie Ferguson // baldnerd.com
 REM This program has to be run as administrator
