@@ -1,6 +1,8 @@
 @echo off
 REM This program has to be run as administrator
 REM Removes ESET Remote Administrator Agent
+REM By Robbie Ferguson // baldnerd.com
+REM Registry key feature adapted (fixed) based on a script provided by ESET Support, uploaded by Jarred Jordan
 
 echo "Uninstalling ESET Management Agent..."
 REM Version 6 and under
