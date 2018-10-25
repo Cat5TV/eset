@@ -4,7 +4,7 @@ REM Removes ESET Management Agent (previously named ESET Remote Administrator Ag
 REM Intended for use as GPO, but could have other applications
 REM PLEASE BE MINDFUL - This will remove your connection to your ESMC/ERA server. Depending on your policies, this could be a very bad thing.
 REM This program must be run as administrator
-REM Version 1
+REM Version 1.01
 
 echo "Uninstalling ESET Management Agent..."
 echo "Trying version 6 and under..."
