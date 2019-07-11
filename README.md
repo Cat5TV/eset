@@ -24,3 +24,11 @@ Following installation, you must:
 ## Tool # 2: Uninstall ESET Management Agent / ESET Remote Administrator Agent
 
 Should you need to uninstall your ESET agent without a Client Task (as would be the case if your ERA/ESMC server was no longer available), you can use [uninstallers/eset-uninstall-agent.bat](uninstallers/eset-uninstall-agent.bat) as a GPO, or manually run as administrator.
+
+## Tool # 3: Install ESET Security Management Center on Debian Buster
+
+If a pre-built appliance isn't available for your platform, or you want to port ESMC to a new architecture, this is your chance! All requirements will be met, and your vanilla Debian Buster installation will become an ESET Security Management Center appliance. [installers/esmc_debian](installers/esmc_debian) should only be run on vanilla installs (destructive).
+
+To install, first deploy your Debian Buster installation.
+
+If using a virtual machine, use a minimum of 2 CPU cores (4 recommended) and 2 GB RAM (4 recommended). If your network has more than 5,000 endpoints, it is suggested to double that: 8 cores, 8 GB RAM. 80 GB hard disk will suffice, and it is recommended to make it thick-provisioned if you have more than 20 endpoints.

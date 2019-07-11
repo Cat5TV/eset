@@ -1,0 +1,147 @@
+#!/bin/bash
+if [[ $EUID -ne 0 ]]; then
+  echo "ERROR: This script must be run as root" 2>&1
+  exit 1
+fi
+
+tmpdir=`mktemp -d -p /tmp/`
+
+# Install some things we will need
+
+  apt update
+  yes | apt install openssh-server
+  yes | apt install mariadb-server
+  yes | apt install gnupg2
+  yes | apt install odbcinst
+
+# Install a VERY OLD version of OpenSSL for use during installation.
+# I will remove it later on in the script and upgrade to the current version.
+echo 'deb http://httpredir.debian.org/debian jessie main contrib non-free
+deb-src http://httpredir.debian.org/debian jessie main contrib non-free
+
+deb http://security.debian.org/ jessie/updates main contrib non-free
+deb-src http://security.debian.org/ jessie/updates main contrib non-free' > /etc/apt/sources.list.d/jessie.list
+  apt update
+  yes | apt install openssl/jessie
+
+  # Microsoft ODBC Driver (note the 10 is a reference to Debian Buster)
+  # See https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server
+#  wget -qO - https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+#  echo 'deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main' > /etc/apt/sources.list.d/mssql-release.list
+# Have to use the stretch repo for now as MS hasn't released a Buster package  :/
+#  echo 'deb [arch=amd64] https://packages.microsoft.com/debian/9/prod stretch main' > /etc/apt/sources.list.d/mssql-release.list
+#  apt update
+#  yes | ACCEPT_EULA=Y apt install msodbcsql17
+
+# Install the MySQL ODBC Driver
+wget -O $tmpdir/odbc.tar.gz https://dev.mysql.com/get/Downloads/Connector-ODBC/8.0/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit.tar.gz
+mkdir $tmpdir/odbc && tar -C $tmpdir/odbc/ -zxf $tmpdir/odbc.tar.gz
+cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/bin/* /usr/local/bin
+cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/lib/* /usr/local/lib
+#myodbc-installer -a -d -n "MySQL ODBC 8.0 Driver" -t "Driver=/usr/local/lib/libmyodbc8w.so"
+#myodbc-installer -a -d -n "MySQL ODBC 8.0" -t "Driver=/usr/local/lib/libmyodbc8a.so"
+#echo '[MySQL]
+#Description = ODBC for MySQL
+#Driver = /usr/local/lib/libmyodbc8a.so
+#Setup = /usr/local/lib/libmyodbc8S.so
+#FileUsage = 1' > /etc/odbcinst.ini
+#odbcinst -i -d -f /etc/odbcinst.ini
+
+odbcd=$(find /usr/lib/libmyodbc*w.so)
+if [[ $odbcd == '' ]]; then
+odbcd=$(find /usr/local/lib/libmyodbc*w.so)
+fi
+if [[ $odbcd == '' ]]; then
+odbcd=$(find /usr/lib64/libmyodbc*w.so)
+fi
+if [[ $odbcd == '' ]]; then
+  echo "Can't find the ODBC Connector."
+  exit
+fi
+odbcs=$(find /usr/lib/libmyodbc*S.so)
+if [[ $odbcs == '' ]]; then
+odbcs=$(find /usr/local/lib/libmyodbc*S.so)
+fi
+if [[ $odbcs == '' ]]; then
+odbcs=$(find /usr/lib64/libmyodbc*S.so)
+fi
+if [[ $odbcs == '' ]]; then
+  echo "Can't find the ODBC Connector."
+  exit
+fi
+echo "[MySQL]
+Description=MySQL ODBC Connector
+Driver=$odbcd
+Setup=$odbcs
+FileUsage = 1
+UsageCount=1
+" > /etc/odbcinst.ini
+odbcinst -i -d -f /etc/odbcinst.ini
+
+# Configure the database
+echo '
+[mysqld]
+max_allowed_packet=33M
+innodb_log_file_size=100M
+innodb_log_files_in_group=2
+' > /etc/mysql/mariadb.conf.d/90-esmc.cnf
+systemctl restart mariadb
+
+# This is a handy bit of code adapted from https://gist.github.com/coderua/5592d95970038944d099
+# Sets up the MariaDB root user without asking for input
+CURRENT_MYSQL_PASSWORD=''
+NEW_MYSQL_PASSWORD="eraadmin" # Remember, MariaDB by default only allows connections from localhost, so this is fine
+if [ $(dpkg-query -W -f='${Status}' expect 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+    echo "Can't find expect. Trying install it..."
+    yes | apt install expect
+fi
+SECURE_MYSQL=$(expect -c "
+set timeout 3
+spawn mysql_secure_installation
+expect \"Enter current password for root (enter for none):\"
+send \"$CURRENT_MYSQL_PASSWORD\r\"
+expect \"root password?\"
+send \"y\r\"
+expect \"New password:\"
+send \"$NEW_MYSQL_PASSWORD\r\"
+expect \"Re-enter new password:\"
+send \"$NEW_MYSQL_PASSWORD\r\"
+expect \"Remove anonymous users?\"
+send \"y\r\"
+expect \"Disallow root login remotely?\"
+send \"y\r\"
+expect \"Remove test database and access to it?\"
+send \"y\r\"
+expect \"Reload privilege tables now?\"
+send \"y\r\"
+expect eof
+")
+echo "${SECURE_MYSQL}"
+yes | apt purge expect
+
+# Figure out which NIC is being used
+  host=google.com
+  host_ip=$(getent ahosts "$host" | awk '{print $1; exit}')
+  interface=`ip route get "$host_ip" | grep -Po '(?<=(dev )).*(?= src| proto)' | cut -f 1 -d " "`
+
+# Find the server's IP address
+  ip=$(/sbin/ip -f inet addr show $interface | grep -Po 'inet \K[\d.]+' | head -n 1)
+  if [[ $ip == "" ]]; then
+    $ip "127.0.0.1"
+  fi
+
+# Find the server's hostname
+  hostname=$(/usr/bin/hostname)
+
+# Grab the latest versions of needed components
+wget -O $tmpdir/agent-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/agent/latest/agent-linux-x86_64.sh && chmod +x $tmpdir/agent-linux-x86_64.sh && $tmpdir/agent-linux-x86_64.sh
+
+wget -O $tmpdir/server-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/server/linux/latest/server-linux-x86_64.sh && chmod +x $tmpdir/server-linux-x86_64.sh && yes | $tmpdir/server-linux-x86_64.sh --skip-license --db-driver=MySQL --db-hostname=127.0.0.1 --db-port=3306 --db-admin-username=root --db-admin-password=$NEW_MYSQL_PASSWORD --server-root-password=eraadmin --db-user-username=root --db-user-password=$NEW_MYSQL_PASSWORD --cert-hostname="$ip;$hostname;"
+
+exit
+wget -O $tmpdir/era.war https://download.eset.com/com/eset/apps/business/era/webconsole/latest/era.war
+
+# Now that the install is complete we can upgrade OpenSSL to the current version
+rm /etc/apt/sources.list.d/jessie.list
+apt update
+yes | apt install openssl
