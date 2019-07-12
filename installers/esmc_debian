@@ -132,7 +132,7 @@ wget -O $tmpdir/server-linux-x86_64.sh https://download.eset.com/com/eset/apps/b
 yes | apt install openjdk-11-jdk tomcat9
 systemctl stop tomcat9
 # Make a file in the root that automatically reroutes the user to /era/
-echo '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head> <title>ESMC Redirect</title></head><body><script>window.location.replace("https://'$ip'/era/");</script></body></html>' > /var/lib/tomcat9/webapps/ROOT/index.html
+echo '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head> <title>ESMC Redirect</title></head><body><script>window.location.replace("https://'$ip':8443/era/");</script></body></html>' > /var/lib/tomcat9/webapps/ROOT/index.html
 wget -O /var/lib/tomcat9/webapps/era.war https://download.eset.com/com/eset/apps/business/era/webconsole/latest/era.war
 # Move tomcat to https
   if [[ -d /etc/tomcat9/certs/ ]]; then
