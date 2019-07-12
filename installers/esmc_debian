@@ -149,12 +149,15 @@ wget -O /var/lib/tomcat9/webapps/era.war https://download.eset.com/com/eset/apps
 systemctl start tomcat9
 
 # Install the agent so the ESMC console can see this server
-wget -O $tmpdir/agent-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/agent/latest/agent-linux-x86_64.sh && chmod +x $tmpdir/agent-linux-x86_64.sh && $tmpdir/agent-linux-x86_64.sh --skip-license --hostname=$ip --port=2222 --webconsole-user=Administrator --webconsole-password=eraadmin --webconsole-port=2223
+wget -O $tmpdir/agent-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/agent/latest/agent-linux-x86_64.sh && chmod +x $tmpdir/agent-linux-x86_64.sh && yes | $tmpdir/agent-linux-x86_64.sh --skip-license --hostname=$ip --port=2222 --webconsole-user=Administrator --webconsole-password=eraadmin --webconsole-port=2223
 
 # Now that the install is complete we can upgrade OpenSSL to the current version
 rm /etc/apt/sources.list.d/jessie.list
 apt update
 yes | apt install openssl
+
+# A bit of cleanup
+rm -rf $tmpdir
 
 echo ""
 echo "Done. Access ESET Security Management Center at https://$ip:8443"
