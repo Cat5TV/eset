@@ -44,60 +44,7 @@ deb-src http://security.debian.org/ jessie/updates main contrib non-free' > /etc
   apt update
   yes | apt install openssl/jessie
 
-  # Microsoft ODBC Driver (note the 10 is a reference to Debian Buster)
-  # See https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server
-#  wget -qO - https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-#  echo 'deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main' > /etc/apt/sources.list.d/mssql-release.list
-# Have to use the stretch repo for now as MS hasn't released a Buster package  :/
-#  echo 'deb [arch=amd64] https://packages.microsoft.com/debian/9/prod stretch main' > /etc/apt/sources.list.d/mssql-release.list
-#  apt update
-#  yes | ACCEPT_EULA=Y apt install msodbcsql17
-
-# Install the MySQL ODBC Driver
-#wget -O $tmpdir/odbc.tar.gz https://dev.mysql.com/get/Downloads/Connector-ODBC/8.0/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit.tar.gz
-#mkdir $tmpdir/odbc && tar -C $tmpdir/odbc/ -zxf $tmpdir/odbc.tar.gz
-#cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/bin/* /usr/local/bin
-#cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/lib/* /usr/local/lib
-#myodbc-installer -a -d -n "MySQL ODBC 8.0 Driver" -t "Driver=/usr/local/lib/libmyodbc8w.so"
-#myodbc-installer -a -d -n "MySQL ODBC 8.0" -t "Driver=/usr/local/lib/libmyodbc8a.so"
-#echo '[MySQL]
-#Description = ODBC for MySQL
-#Driver = /usr/local/lib/libmyodbc8a.so
-#Setup = /usr/local/lib/libmyodbc8S.so
-#FileUsage = 1' > /etc/odbcinst.ini
-#odbcinst -i -d -f /etc/odbcinst.ini
-
-#odbcd=$(find /usr/lib/libmyodbc*w.so)
-#if [[ $odbcd == '' ]]; then
-#odbcd=$(find /usr/local/lib/libmyodbc*w.so)
-#fi
-#if [[ $odbcd == '' ]]; then
-#odbcd=$(find /usr/lib64/libmyodbc*w.so)
-#fi
-#if [[ $odbcd == '' ]]; then
-#  echo "Can't find the ODBC Connector."
-#  exit
-#fi
-#odbcs=$(find /usr/lib/libmyodbc*S.so)
-#if [[ $odbcs == '' ]]; then
-#odbcs=$(find /usr/local/lib/libmyodbc*S.so)
-#fi
-#if [[ $odbcs == '' ]]; then
-#odbcs=$(find /usr/lib64/libmyodbc*S.so)
-#fi
-#if [[ $odbcs == '' ]]; then
-#  echo "Can't find the ODBC Connector."
-#  exit
-#fi
-#echo "[MySQL]
-#Description=MySQL ODBC Connector
-#Driver=$odbcd
-#Setup=$odbcs
-#FileUsage = 1
-#UsageCount=1
-#" > /etc/odbcinst.ini
-#odbcinst -i -d -f /etc/odbcinst.ini
-
+# Install ODBC Connector
 yes | apt install libmyodbc
 odbc=$(find /usr/ -name libmyodbc.so)
 if [[ $odbc == '' ]]; then
@@ -207,4 +154,6 @@ rm /etc/apt/sources.list.d/jessie.list
 apt update
 yes | apt install openssl
 
-
+echo ""
+echo "Done. Access ESET Security Management Center at https://$ip:8443"
+echo ""
