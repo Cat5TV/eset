@@ -4,6 +4,16 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+read -p "This process is DESTRUCTIVE. Are you sure? " -n 1 -r
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+  echo ""
+  echo ""
+  echo "Good day to you, sir."
+  echo ""
+  exit
+fi
+
 tmpdir=`mktemp -d -p /tmp/`
 
 # Install some things we will need
@@ -13,6 +23,12 @@ tmpdir=`mktemp -d -p /tmp/`
   yes | apt install mariadb-server
   yes | apt install gnupg2
   yes | apt install odbcinst
+
+# setup default database
+if [[ -d /var/lib/mysql ]]; then
+  rm -rf /var/lib/mysql
+fi
+mysql_install_db
 
 # Install a VERY OLD version of OpenSSL for use during installation.
 # I will remove it later on in the script and upgrade to the current version.
@@ -34,10 +50,10 @@ deb-src http://security.debian.org/ jessie/updates main contrib non-free' > /etc
 #  yes | ACCEPT_EULA=Y apt install msodbcsql17
 
 # Install the MySQL ODBC Driver
-wget -O $tmpdir/odbc.tar.gz https://dev.mysql.com/get/Downloads/Connector-ODBC/8.0/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit.tar.gz
-mkdir $tmpdir/odbc && tar -C $tmpdir/odbc/ -zxf $tmpdir/odbc.tar.gz
-cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/bin/* /usr/local/bin
-cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/lib/* /usr/local/lib
+#wget -O $tmpdir/odbc.tar.gz https://dev.mysql.com/get/Downloads/Connector-ODBC/8.0/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit.tar.gz
+#mkdir $tmpdir/odbc && tar -C $tmpdir/odbc/ -zxf $tmpdir/odbc.tar.gz
+#cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/bin/* /usr/local/bin
+#cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/lib/* /usr/local/lib
 #myodbc-installer -a -d -n "MySQL ODBC 8.0 Driver" -t "Driver=/usr/local/lib/libmyodbc8w.so"
 #myodbc-installer -a -d -n "MySQL ODBC 8.0" -t "Driver=/usr/local/lib/libmyodbc8a.so"
 #echo '[MySQL]
@@ -47,36 +63,51 @@ cp $tmpdir/odbc/mysql-connector-odbc-8.0.16-linux-debian9-x86-64bit/lib/* /usr/l
 #FileUsage = 1' > /etc/odbcinst.ini
 #odbcinst -i -d -f /etc/odbcinst.ini
 
-odbcd=$(find /usr/lib/libmyodbc*w.so)
-if [[ $odbcd == '' ]]; then
-odbcd=$(find /usr/local/lib/libmyodbc*w.so)
-fi
-if [[ $odbcd == '' ]]; then
-odbcd=$(find /usr/lib64/libmyodbc*w.so)
-fi
-if [[ $odbcd == '' ]]; then
-  echo "Can't find the ODBC Connector."
-  exit
-fi
-odbcs=$(find /usr/lib/libmyodbc*S.so)
-if [[ $odbcs == '' ]]; then
-odbcs=$(find /usr/local/lib/libmyodbc*S.so)
-fi
-if [[ $odbcs == '' ]]; then
-odbcs=$(find /usr/lib64/libmyodbc*S.so)
-fi
-if [[ $odbcs == '' ]]; then
+#odbcd=$(find /usr/lib/libmyodbc*w.so)
+#if [[ $odbcd == '' ]]; then
+#odbcd=$(find /usr/local/lib/libmyodbc*w.so)
+#fi
+#if [[ $odbcd == '' ]]; then
+#odbcd=$(find /usr/lib64/libmyodbc*w.so)
+#fi
+#if [[ $odbcd == '' ]]; then
+#  echo "Can't find the ODBC Connector."
+#  exit
+#fi
+#odbcs=$(find /usr/lib/libmyodbc*S.so)
+#if [[ $odbcs == '' ]]; then
+#odbcs=$(find /usr/local/lib/libmyodbc*S.so)
+#fi
+#if [[ $odbcs == '' ]]; then
+#odbcs=$(find /usr/lib64/libmyodbc*S.so)
+#fi
+#if [[ $odbcs == '' ]]; then
+#  echo "Can't find the ODBC Connector."
+#  exit
+#fi
+#echo "[MySQL]
+#Description=MySQL ODBC Connector
+#Driver=$odbcd
+#Setup=$odbcs
+#FileUsage = 1
+#UsageCount=1
+#" > /etc/odbcinst.ini
+#odbcinst -i -d -f /etc/odbcinst.ini
+
+yes | apt install libmyodbc
+odbc=$(find /usr/ -name libmyodbc.so)
+if [[ $odbc == '' ]]; then
   echo "Can't find the ODBC Connector."
   exit
 fi
 echo "[MySQL]
 Description=MySQL ODBC Connector
-Driver=$odbcd
-Setup=$odbcs
+Driver=$odbc
 FileUsage = 1
 UsageCount=1
 " > /etc/odbcinst.ini
 odbcinst -i -d -f /etc/odbcinst.ini
+
 
 # Configure the database
 echo '
@@ -117,6 +148,9 @@ send \"y\r\"
 expect eof
 ")
 echo "${SECURE_MYSQL}"
+# Failsafe
+mysql -uroot -peraadmin -e "ALTER USER 'root'@'localhost' IDENTIFIED with mysql_native_password;ALTER USER 'root'@'localhost' IDENTIFIED BY 'eraadmin';FLUSH PRIVILEGES;"
+
 yes | apt purge expect
 
 # Figure out which NIC is being used
@@ -133,15 +167,40 @@ yes | apt purge expect
 # Find the server's hostname
   hostname=$(/usr/bin/hostname)
 
+# We'll need to combine the above info to create the initial self-signed cert
+certhosts="$ip;$hostname;$hostname.local"
+
 # Grab the latest versions of needed components
-wget -O $tmpdir/agent-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/agent/latest/agent-linux-x86_64.sh && chmod +x $tmpdir/agent-linux-x86_64.sh && $tmpdir/agent-linux-x86_64.sh
 
-wget -O $tmpdir/server-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/server/linux/latest/server-linux-x86_64.sh && chmod +x $tmpdir/server-linux-x86_64.sh && yes | $tmpdir/server-linux-x86_64.sh --skip-license --db-driver=MySQL --db-hostname=127.0.0.1 --db-port=3306 --db-admin-username=root --db-admin-password=$NEW_MYSQL_PASSWORD --server-root-password=eraadmin --db-user-username=root --db-user-password=$NEW_MYSQL_PASSWORD --cert-hostname="$ip;$hostname;"
+# ESET Security Management Center Server Component
+wget -O $tmpdir/server-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/server/linux/latest/server-linux-x86_64.sh && chmod +x $tmpdir/server-linux-x86_64.sh && yes | $tmpdir/server-linux-x86_64.sh --skip-license --db-driver=MySQL --db-hostname=127.0.0.1 --db-port=3306 --db-admin-username=root --db-admin-password=$NEW_MYSQL_PASSWORD --server-root-password=eraadmin --db-user-username=root --db-user-password=$NEW_MYSQL_PASSWORD --cert-hostname="$certhosts"
 
-exit
-wget -O $tmpdir/era.war https://download.eset.com/com/eset/apps/business/era/webconsole/latest/era.war
+# Web Server
+yes | apt install openjdk-11-jdk tomcat9
+systemctl stop tomcat9
+# Make a file in the root that automatically reroutes the user to /era/
+echo '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head> <title>ESMC Redirect</title></head><body><script>window.location.replace("/era/");</script></body></html>' > /var/lib/tomcat9/webapps/ROOT/index.html
+wget -O /var/lib/tomcat9/webapps/era.war https://download.eset.com/com/eset/apps/business/era/webconsole/latest/era.war
+# Move tomcat to https
+  if [[ -d /etc/tomcat9/certs/ ]]; then
+    rm -rf /etc/tomcat9/certs/
+  fi
+  mkdir /etc/tomcat9/certs
+
+  # Create keystore
+  keytool -genkeypair -alias "tomcat" -keyalg RSA -keysize 4096 -validity 3650 -keystore "/etc/tomcat9/certs/tomcat.keystore" -storepass "eraadmin" -keypass "eraadmin" -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"
+  # Export certificate
+  keytool -certreq -alias tomcat -file "/etc/tomcat9/certs/tomcat.csr" -keystore "/etc/tomcat9/certs/tomcat.keystore" -storepass "eraadmin" -ext san=dns:ESMC7-2008R2
+  # Add port 8443 and redirect
+  sed -i '/<\/Engine>/a<Connector server="ESMC" port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol" SSLEnabled="true" maxThreads="150" scheme="https" secure="true" clientAuth="false" sslProtocol="TLS" keystoreFile="/etc/tomcat9/certs/tomcat.keystore" keystorePass="eraadmin"/>' /etc/tomcat9/server.xml
+systemctl start tomcat9
+
+# Install the agent so the ESMC console can see this server
+wget -O $tmpdir/agent-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/agent/latest/agent-linux-x86_64.sh && chmod +x $tmpdir/agent-linux-x86_64.sh && $tmpdir/agent-linux-x86_64.sh --skip-license --hostname=$ip --port=2222 --webconsole-user=Administrator --webconsole-password=eraadmin --webconsole-port=2223
 
 # Now that the install is complete we can upgrade OpenSSL to the current version
 rm /etc/apt/sources.list.d/jessie.list
 apt update
 yes | apt install openssl
+
+

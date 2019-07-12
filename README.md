@@ -32,3 +32,9 @@ If a pre-built appliance isn't available for your platform, or you want to port 
 To install, first deploy your Debian Buster installation.
 
 If using a virtual machine, use a minimum of 2 CPU cores (4 recommended) and 2 GB RAM (4 recommended). If your network has more than 5,000 endpoints, it is suggested to double that: 8 cores, 8 GB RAM. 80 GB hard disk will suffice, and it is recommended to make it thick-provisioned if you have more than 20 endpoints.
+
+Once installed, access your server at https://IPADDRESS:8443/
+
+Your first action should be: More->Users->Administrator->Edit->Set Password
+
+Default password is eraadmin
