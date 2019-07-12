@@ -29,6 +29,8 @@ Should you need to uninstall your ESET agent without a Client Task (as would be 
 
 If a pre-built appliance isn't available for your platform, or you want to port ESMC to a new architecture, this is your chance! All requirements will be met, and your vanilla Debian Buster installation will become an ESET Security Management Center appliance. [installers/esmc_debian](installers/esmc_debian) should only be run on vanilla installs (destructive).
 
+A side effect of this script is that you end up with a much more current ESET Security Management Center appliance running on Debian Buster rather than an old version of CentOS with old packages. For example, the official ESMC distributable virtual appliance uses OpenSSL 1.0 (!!), Tomcat7 and OpenJDK 8. My install uses Debian Buster, Tomcat9 and JDK 11.
+
 To install, first deploy your Debian Buster installation.
 
 If using a virtual machine, use a minimum of 2 CPU cores (4 recommended) and 2 GB RAM (4 recommended). If your network has more than 5,000 endpoints, it is suggested to double that: 8 cores, 8 GB RAM. 80 GB hard disk will suffice, and it is recommended to make it thick-provisioned if you have more than 20 endpoints.
