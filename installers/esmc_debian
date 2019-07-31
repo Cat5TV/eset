@@ -1,20 +1,7 @@
 #!/bin/bash
-echo "Not going to do MySQL"
-# ESET currently recommends no higher than MySQL 5.7. This version goes EOL next year.
-# MariaDB, while claimed to be "unsupported" works flawlessly and is downward compatible.
-# Even with the correct ODBC, ESMC refuses to work with a modern version of MySQL, so the claim should instead be that MySQL is not supported.
-# Reverting to MariaDB since it is more current, faster, and works.
 
-exit
 # ESET Security Management Center installer for Linux
 # By Robbie Ferguson https://baldnerd.com
-# Version 1.1
-#
-# Changelog:
-#
-#   1.1 - July 31, 2019 - Moved from MariaDB to MySQL so ESET Technical Team can officially support this deployment
-#                         As requested by Nicolás Ezequiel Raggi, Senior Technical Support Engineer (Tier 2), ESET Latinoamérica
-#   1.0 - July 12, 2019 - Initial release.
 
 if [[ $EUID -ne 0 ]]; then
   echo "ERROR: This script must be run as root" 2>&1
@@ -39,85 +26,15 @@ tmpdir=`mktemp -d -p /tmp/`
 
   apt update
   yes | apt install openssh-server
+  yes | apt install mariadb-server
   yes | apt install gnupg2
   yes | apt install odbcinst
 
-# MySQL
-  if [[ -d /var/lib/mysql ]]; then
-    rm -rf /var/lib/mysql
-  fi
-  yes | apt install gnupg debconf
-  wget -O $tmpdir/mysql-apt-config.deb http://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb
-  export DEBIAN_FRONTEND="noninteractive"
-  debconf-set-selections <<< "mysql-server mysql-server/root_password password eraadmin"
-  debconf-set-selections <<< "mysql-server mysql-server/root_password_again password eraadmin"
-  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin dpkg -i $tmpdir/mysql-apt-config.deb
-  apt update
-  DEBIAN_PRIORITY=critical apt install -y -q mysql-server
-
-# Configure the MySQL database
-echo '[mysqld]
-max_allowed_packet=33M
-innodb_log_file_size=100M
-innodb_log_files_in_group=2
-bind-address=127.0.0.1
-' > /etc/mysql/mysql.conf.d/90-esmc.cnf
-systemctl restart mysql
-
-# Sets up the MySQL root user without asking for input
-CURRENT_MYSQL_PASSWORD=''
-NEW_MYSQL_PASSWORD="eraadmin" # We will only allow connections from localhost, so this is fine
-
-# Setup the root password and remove sample data and guest accounts
-  expect_installed=0
-  if [ $(dpkg-query -W -f='${Status}' expect 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
-    echo "Can't find expect. Trying install it..."
-    yes | apt install expect
-    expect_installed=1 # notifies us that expect was installed by us, not the user, so can be removed later
-  fi
-      SECURE_MYSQL=$(expect -c "
-
-      set timeout 10
-      spawn mysql_secure_installation
-
-      expect "Enter password for user root:"
-      send "$CURRENT_MYSQL_PASSWORD\r"
-
-      expect "Change the password for root ?\(Press y\|Y for Yes, any other key for No\) :"
-      send "y\r"
-
-      expect "New password:"
-      send "$NEW_MYSQL_PASSWORD\r"
-
-      expect "Re-enter new password:"
-      send "$NEW_MYSQL_PASSWORD\r"
-
-      expect "Do you wish to continue with the password provided?\(Press y\|Y for Yes, any other key for No\) :"
-      send "y\r"
-
-      expect "Remove anonymous users?\(Press y\|Y for Yes, any other key for No\) :"
-      send "y\r"
-
-      expect "Disallow root login remotely?\(Press y\|Y for Yes, any other key for No\) :"
-      send "y\r"
-
-      expect "Remove test database and access to it?\(Press y\|Y for Yes, any other key for No\) :"
-      send "y\r"
-
-      expect "Reload privilege tables now?\(Press y\|Y for Yes, any other key for No\) :"
-      send "y\r"
-
-      expect eof
-      ")
-
-      echo "$SECURE_MYSQL"
-
-# Failsafe
-mysql -uroot -peraadmin -e "ALTER USER 'root'@'localhost' IDENTIFIED with mysql_native_password;ALTER USER 'root'@'localhost' IDENTIFIED BY 'eraadmin';FLUSH PRIVILEGES;"
-
-if [[ $expect_installed == 1 ]]; then
-  yes | apt purge expect
+# setup default database
+if [[ -d /var/lib/mysql ]]; then
+  rm -rf /var/lib/mysql
 fi
+mysql_install_db
 
 # Install a VERY OLD version of OpenSSL for use during installation.
 # I will remove it later on in the script and upgrade to the current version.
@@ -130,17 +47,8 @@ deb-src http://security.debian.org/ jessie/updates main contrib non-free' > /etc
   yes | apt install openssl/jessie
 
 # Install ODBC Connector
-yes | apt install unixodbc
-wget -O $tmpdir/odbc.tar.gz https://dev.mysql.com/get/Downloads/Connector-ODBC/8.0/mysql-connector-odbc-8.0.17-linux-glibc2.12-x86-64bit.tar.gz
-cd $tmpdir
-tar xvzf odbc.tar.gz
-if [[ -e /var/lib/libmyodbc ]]; then
-  rm -rf /var/lib/libmyodbc
-fi
-mkdir -p /var/lib/libmyodbc
-cp $tmpdir/mysql-connector-odbc-8.0.17-linux-glibc2.12-x86-64bit/lib/libmyod*a*.so /var/lib/libmyodbc/
-
-odbc=$(find /var/lib/libmyodbc/ -name libmyodbc*a.so)
+yes | apt install libmyodbc
+odbc=$(find /usr/ -name libmyodbc.so)
 if [[ $odbc == '' ]]; then
   echo "Can't find the ODBC Connector."
   exit
@@ -153,6 +61,50 @@ UsageCount=1
 " > /etc/odbcinst.ini
 odbcinst -i -d -f /etc/odbcinst.ini
 
+
+# Configure the database
+echo '
+[mysqld]
+max_allowed_packet=33M
+innodb_log_file_size=100M
+innodb_log_files_in_group=2
+' > /etc/mysql/mariadb.conf.d/90-esmc.cnf
+systemctl restart mariadb
+
+# This is a handy bit of code adapted from https://gist.github.com/coderua/5592d95970038944d099
+# Sets up the MariaDB root user without asking for input
+CURRENT_MYSQL_PASSWORD=''
+NEW_MYSQL_PASSWORD="eraadmin" # Remember, MariaDB by default only allows connections from localhost, so this is fine
+if [ $(dpkg-query -W -f='${Status}' expect 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+    echo "Can't find expect. Trying install it..."
+    yes | apt install expect
+fi
+SECURE_MYSQL=$(expect -c "
+set timeout 3
+spawn mysql_secure_installation
+expect \"Enter current password for root (enter for none):\"
+send \"$CURRENT_MYSQL_PASSWORD\r\"
+expect \"root password?\"
+send \"y\r\"
+expect \"New password:\"
+send \"$NEW_MYSQL_PASSWORD\r\"
+expect \"Re-enter new password:\"
+send \"$NEW_MYSQL_PASSWORD\r\"
+expect \"Remove anonymous users?\"
+send \"y\r\"
+expect \"Disallow root login remotely?\"
+send \"y\r\"
+expect \"Remove test database and access to it?\"
+send \"y\r\"
+expect \"Reload privilege tables now?\"
+send \"y\r\"
+expect eof
+")
+echo "${SECURE_MYSQL}"
+# Failsafe
+mysql -uroot -peraadmin -e "ALTER USER 'root'@'localhost' IDENTIFIED with mysql_native_password;ALTER USER 'root'@'localhost' IDENTIFIED BY 'eraadmin';FLUSH PRIVILEGES;"
+
+yes | apt purge expect
 
 # Figure out which NIC is being used
   host=google.com
