@@ -29,7 +29,11 @@ Should you need to uninstall your ESET agent without a Client Task (as would be 
 
 If a pre-built appliance isn't available for your platform, or you want to port ESMC to a new architecture, this is your chance! All requirements will be met, and your vanilla Debian Buster installation will become an ESET Security Management Center appliance. [installers/esmc_debian](installers/esmc_debian) should only be run on vanilla installs (destructive).
 
-A side effect of this script is that you end up with a much more current ESET Security Management Center appliance running on Debian Buster rather than an old distro with old packages. For example, the official ESMC distributable virtual appliance is based on CentOS 7.5 and uses OpenSSL 1.0 (!!), Tomcat7 and OpenJDK 8. My install uses Debian Buster, OpenSSL 1.1, Tomcat9 and OpenJDK 11.
+A side effect of this script is that you end up with a much more current ESET Security Management Center appliance running on Debian Buster rather than an old distro with old packages. For example, the official ESMC distributable virtual appliance is based on CentOS 7.5 and uses OpenSSL 1.0 (!!), Tomcat7, OpenJDK 8 and an old version of MySQL. My install uses Debian Buster, OpenSSL 1.1, Tomcat9, OpenJDK 11 and the current version of MariaDB.
+
+### Note re. use of MariaDB
+
+As pointed out by Nicolás Ezequiel Raggi, Senior Technical Support Engineer (Tier 2), ESET Latinoamérica, ESET's official claim is that MariaDB is unsupported and users should use MySQL older than 5.7. As MySQL 5.6 went EOL February 2018 and 5.7 is EOL in 2020, I refuse to recommend such old packages. Instead, I have made my installer ensure compatibility with the current version of MariaDB. Technical support may claim this is an unsupported configuration. Until they support a current version of MySQL and ODBC, I suggest it is instead MariaDB that is supported and MySQL is the unsupported database backend.
 
 To install, first deploy your Debian Buster installation.
 
