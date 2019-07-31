@@ -1,8 +1,20 @@
 #!/bin/bash
-echo 'Migrating to MySQL - please re-download later today'
+echo "Not going to do MySQL"
+# ESET currently recommends no higher than MySQL 5.7. This version goes EOL next year.
+# MariaDB, while claimed to be "unsupported" works flawlessly and is downward compatible.
+# Even with the correct ODBC, ESMC refuses to work with a modern version of MySQL, so the claim should instead be that MySQL is not supported.
+# Reverting to MariaDB since it is more current, faster, and works.
+
 exit
 # ESET Security Management Center installer for Linux
 # By Robbie Ferguson https://baldnerd.com
+# Version 1.1
+#
+# Changelog:
+#
+#   1.1 - July 31, 2019 - Moved from MariaDB to MySQL so ESET Technical Team can officially support this deployment
+#                         As requested by Nicolás Ezequiel Raggi, Senior Technical Support Engineer (Tier 2), ESET Latinoamérica
+#   1.0 - July 12, 2019 - Initial release.
 
 if [[ $EUID -ne 0 ]]; then
   echo "ERROR: This script must be run as root" 2>&1
@@ -44,11 +56,11 @@ tmpdir=`mktemp -d -p /tmp/`
   DEBIAN_PRIORITY=critical apt install -y -q mysql-server
 
 # Configure the MySQL database
-echo '
-[mysqld]
+echo '[mysqld]
 max_allowed_packet=33M
 innodb_log_file_size=100M
 innodb_log_files_in_group=2
+bind-address=127.0.0.1
 ' > /etc/mysql/mysql.conf.d/90-esmc.cnf
 systemctl restart mysql
 
@@ -118,8 +130,17 @@ deb-src http://security.debian.org/ jessie/updates main contrib non-free' > /etc
   yes | apt install openssl/jessie
 
 # Install ODBC Connector
-yes | apt install libmyodbc
-odbc=$(find /usr/ -name libmyodbc.so)
+yes | apt install unixodbc
+wget -O $tmpdir/odbc.tar.gz https://dev.mysql.com/get/Downloads/Connector-ODBC/8.0/mysql-connector-odbc-8.0.17-linux-glibc2.12-x86-64bit.tar.gz
+cd $tmpdir
+tar xvzf odbc.tar.gz
+if [[ -e /var/lib/libmyodbc ]]; then
+  rm -rf /var/lib/libmyodbc
+fi
+mkdir -p /var/lib/libmyodbc
+cp $tmpdir/mysql-connector-odbc-8.0.17-linux-glibc2.12-x86-64bit/lib/libmyod*a*.so /var/lib/libmyodbc/
+
+odbc=$(find /var/lib/libmyodbc/ -name libmyodbc*a.so)
 if [[ $odbc == '' ]]; then
   echo "Can't find the ODBC Connector."
   exit
