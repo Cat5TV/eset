@@ -10,14 +10,16 @@ fi
 
 APT_LISTCHANGES_FRONTEND=cat
 
-read -p "This process is DESTRUCTIVE. Are you sure? " -n 1 -r
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-  echo ""
-  echo ""
-  echo "Good day to you, sir."
-  echo ""
-  exit
+if [[ $1 != "force" ]]; then
+  read -p "This process is DESTRUCTIVE. Are you sure? " -n 1 -r
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    echo ""
+    echo ""
+    echo "Good day to you, sir."
+    echo ""
+    exit
+  fi
 fi
 
 tmpdir=`mktemp -d -p /tmp/`

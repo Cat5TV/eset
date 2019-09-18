@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo "Building ESET Security Management Center Docker Container"
+echo "By Robbie Ferguson // The Bald Nerd"
+echo ""
+read -r -p "What tag would you like to use? " tag
+
+# Compile ESMC
+docker build --label tag="$tag" -t esmc stages/01
+
+# Deploy ESMC on this machine
+docker run --hostname esmc --mount type=tmpfs,destination=/tmp,tmpfs-mode=1777 --mount type=tmpfs,destination=/var/www/html/backup/snapshot,tmpfs-mode=1770 --restart=unless-stopped --stop-timeout 120 --name esmc -p 80:80 -p 443:443 -p 2222:2222 -d esmc
