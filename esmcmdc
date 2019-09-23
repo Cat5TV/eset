@@ -35,7 +35,7 @@
 
 #### Begin Configuration
 
-  nic="eth0"
+  nic="enp0s3"
 
 #### End Configuration
 
@@ -45,13 +45,25 @@ command=$1
 
 if [[ "$command" == "prep" ]]; then
 
+  # Create the installer directory
+  if [[ ! -e /root/eset_installers ]]; then
+    mkdir /root/eset_installers
+  fi
+
   # Get the latest version of the MDC installer
   wget -O /root/eset_installers/mdmcore-linux-x86_64.sh https://download.eset.com/com/eset/apps/business/era/mdm/latest/mdmcore-linux-x86_64.sh
   chmod +x /root/eset_installers/mdmcore-linux-x86_64.sh && rm -f /root/eset_installers/MDM.sh && ln -s /root/eset_installers/mdmcore-linux-x86_64.sh /root/eset_installers/MDM.sh
 
   # Add PHP for use by tools shell script
   if [[ ! -e /usr/bin/php ]]; then
-    yum -y install php-cli
+    apt=$(which apt)
+    yum=$(which yum)
+    if [[ $apt != "" ]]; then
+      apt-get update
+      apt-get install -y php-cli
+    elif [[ $yum != "" ]]; then
+      yum -y install php-cli
+    fi
   fi
 
   # Add driver named "MySQL"
