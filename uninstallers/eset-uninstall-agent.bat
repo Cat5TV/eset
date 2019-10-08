@@ -23,3 +23,6 @@ reg delete "HKEY_CLASSES_ROOT\Installer\Products\07F21F149AF55F34494F355BE44BEE4
 reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Installer\Products\07F21F149AF55F34494F355BE44BEE4C" /f
 reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products\07F21F149AF55F34494F355BE44BEE4C" /f
 reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{41F12F70-5FA9-43F5-94F4-53B54EB4EEC4}" /f
+
+echo "Done."
+echo "Please reboot your computer to complete the removal."
